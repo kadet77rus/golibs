@@ -3,14 +3,13 @@ name: test golibs
 on: push
 
 jobs:
-  tests:
+  tests_win_mac:
     runs-on: ${{ matrix.os }}
     env:
       GO111MODULE: "on"
     strategy:
       matrix:
         os:
-          - ubuntu-latest
           - windows-latest
           - macos-latest
     steps:
@@ -20,19 +19,28 @@ jobs:
         with:
           go-version: 1.14.x
       - name: tests
-        run: |
+        run: |-
           go test -race -v -bench=. -coverprofile=coverage.txt -covermode=atomic ./...
 
-  coverage:
+  tests_linux:
     runs-on: ubuntu-latest
+    env:
+      GO111MODULE: "on"
     steps:
-      - name: add coverage
-        run: bash <(curl -s https://codecov.io/bash)
+      - uses: actions/checkout@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.14.x
+      - name: tests
+        run: |-
+          go test -race -v -bench=. -coverprofile=coverage.txt -covermode=atomic ./...
+          bash <(curl -s https://codecov.io/bash)
 
   notify:
     needs:
-      - tests
-      - coverage
+      - tests_linux
+      - tests_win_mac
     # Secrets are not passed to workflows that are triggered by a pull request
     # from a fork.
     #
